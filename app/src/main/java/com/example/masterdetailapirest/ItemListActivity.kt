@@ -84,7 +84,7 @@ class ItemListActivity : AppCompatActivity() {
 
                     // asignamos el valor de 'title' en el constructor de la data class 'Datos'
                     var titulo = miJSONArray.getJSONObject(jsonIndex).getJSONObject("title").getString("rendered")
-                    var descripcion = miJSONArray.getJSONObject(jsonIndex).getJSONObject("content").getString("rendered")
+                    var descripcion = miJSONArray.getJSONObject(jsonIndex).getJSONObject("excerpt").getString("rendered")
                     // salida procesada en Logcat
                     var post=Posts.Post(titulo,descripcion)
                     Posts.lista.add(post)
@@ -128,6 +128,7 @@ class ItemListActivity : AppCompatActivity() {
                     val fragment = ItemDetailFragment().apply {
                         arguments = Bundle().apply {
                             putString(ItemDetailFragment.ARG_ITEM_ID, item.titulo)
+                            putString(ItemDetailFragment.ARG_ITEM_DESC, item.descripcion)
                         }
                     }
                     parentActivity.supportFragmentManager
