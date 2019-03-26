@@ -30,7 +30,7 @@ object DummyContent {
         }
     }
 
-    private fun addItem(item: DummyItem) {
+    fun addItem(item: DummyItem) {
         ITEMS.add(item)
         ITEM_MAP.put(item.id, item)
     }
@@ -51,7 +51,7 @@ object DummyContent {
     /**
      * A dummy item representing a piece of content.
      */
-    data class DummyItem(val id: String, val content: String, val details: String) {
-        override fun toString(): String = content
+    data class DummyItem(val id: String, val title: String, val details: String) {
+        override fun toString(): String = title
     }
 }

@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.RecyclerView
 import android.support.design.widget.Snackbar
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,10 +16,10 @@ import kotlinx.android.synthetic.main.item_list_content.view.*
 import kotlinx.android.synthetic.main.item_list.*
 
 import org.jetbrains.anko.doAsync
+import org.jetbrains.anko.longToast
 import java.net.URL
 import org.json.JSONArray
 import org.jetbrains.anko.uiThread
-import kotlinx.android.synthetic.main.activity_item_list.*
 
 /**
  * An activity representing a list of Pings. This activity
@@ -48,6 +47,7 @@ class ItemListActivity : AppCompatActivity() {
         fab.setOnClickListener { view ->
             Snackbar.make(view, "pulsado boton", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
+
         }
 
         if (item_detail_container != null) {
@@ -57,40 +57,64 @@ class ItemListActivity : AppCompatActivity() {
             // activity should be in two-pane mode.
             twoPane = true
         }
-
         wpPetition()
+
     }
     private fun wpPetition() {
-        // el siguiente codigo lo lanzamos en una corrutina, en otro hilo
-
+        Posts.lista.clear()
         doAsync {
 
+            // capturamos los errores de la peticion
+            try {
+                // peticion a un servidor rest que devuelve un json generico
 
-            val peticion = URL("http://52.14.208.12/wordpress/?rest_route=/wp/v2/posts").readText()
-            // sabemos que recibimos un array de objetos JSON
-            val miJSONArray = JSONArray(peticion)
+                val respuesta = URL("http://52.14.208.12/wordpress/?rest_route=/wp/v2/posts").readText()
 
-            for (jsonIndex in 0..(miJSONArray.length() - 1)) {
-                val idpost = miJSONArray.getJSONObject(jsonIndex).getString("id")
-                val titulo = miJSONArray.getJSONObject(jsonIndex).getJSONObject("title").getString("rendered")
-                val resumen = miJSONArray.getJSONObject(jsonIndex).getJSONObject("excerpt").getString("rendered")
-                DummyContent.addItem(DummyContent.DummyItem(idpost, titulo, resumen))
+                // parsing data
 
-            }
-            uiThread {
+                // sabemos que recibimos un array de objetos JSON
+                uiThread {
+                val miJSONArray = JSONArray(respuesta)
+
+                // recorremos el Array
+
+                for (jsonIndex in 0..(miJSONArray.length() - 1)) {
+
+                    // creamos el objeto 'misDatos' a partir de la clase 'Datos'
+
+                    // asignamos el valor de 'title' en el constructor de la data class 'Datos'
+                    var titulo = miJSONArray.getJSONObject(jsonIndex).getJSONObject("title").getString("rendered")
+                    var descripcion = miJSONArray.getJSONObject(jsonIndex).getJSONObject("content").getString("rendered")
+                    // salida procesada en Logcat
+                    var post=Posts.Post(titulo,descripcion)
+                    Posts.lista.add(post)
+                }
+
+
+                    // Log.d(LOGTAG, respuesta)
+                    longToast("Request performed")
+                }
+
+                // Si algo va mal lo capturamos
+            } catch (e: Exception) {
+                uiThread {
+                    longToast("Something go wrong: $e")
+                }
+            }finally {
+
                 setupRecyclerView(item_list)
             }
+            }
 
-        }
     }
 
     private fun setupRecyclerView(recyclerView: RecyclerView) {
-        recyclerView.adapter = SimpleItemRecyclerViewAdapter(this, DummyContent.ITEMS, twoPane)
+        recyclerView.adapter = SimpleItemRecyclerViewAdapter(this, Posts.lista, twoPane)
     }
 
     class SimpleItemRecyclerViewAdapter(
         private val parentActivity: ItemListActivity,
-        private val values: List<DummyContent.DummyItem>,
+        private val values: MutableList<Posts.Post>,
         private val twoPane: Boolean
     ) :
         RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder>() {
@@ -99,11 +123,11 @@ class ItemListActivity : AppCompatActivity() {
 
         init {
             onClickListener = View.OnClickListener { v ->
-                val item = v.tag as DummyContent.DummyItem
+                val item = v.tag as Posts.Post
                 if (twoPane) {
                     val fragment = ItemDetailFragment().apply {
                         arguments = Bundle().apply {
-                            putString(ItemDetailFragment.ARG_ITEM_ID, item.id)
+                            putString(ItemDetailFragment.ARG_ITEM_ID, item.titulo)
                         }
                     }
                     parentActivity.supportFragmentManager
@@ -112,7 +136,7 @@ class ItemListActivity : AppCompatActivity() {
                         .commit()
                 } else {
                     val intent = Intent(v.context, ItemDetailActivity::class.java).apply {
-                        putExtra(ItemDetailFragment.ARG_ITEM_ID, item.id)
+                        putExtra(ItemDetailFragment.ARG_ITEM_ID, item.titulo)
                     }
                     v.context.startActivity(intent)
                 }
@@ -127,8 +151,8 @@ class ItemListActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val item = values[position]
-            holder.idView.text = item.id
-            holder.contentView.text = item.content
+            holder.idView.text = item.titulo
+            holder.contentView.text = item.descripcion
 
             with(holder.itemView) {
                 tag = item
