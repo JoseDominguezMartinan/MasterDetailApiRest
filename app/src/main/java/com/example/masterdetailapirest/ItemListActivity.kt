@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.RecyclerView
 import android.support.design.widget.Snackbar
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,6 +15,12 @@ import com.example.masterdetailapirest.dummy.DummyContent
 import kotlinx.android.synthetic.main.activity_item_list.*
 import kotlinx.android.synthetic.main.item_list_content.view.*
 import kotlinx.android.synthetic.main.item_list.*
+
+import org.jetbrains.anko.doAsync
+import java.net.URL
+import org.json.JSONArray
+import org.jetbrains.anko.uiThread
+import kotlinx.android.synthetic.main.activity_item_list.*
 
 /**
  * An activity representing a list of Pings. This activity
@@ -39,7 +46,7 @@ class ItemListActivity : AppCompatActivity() {
         toolbar.title = title
 
         fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+            Snackbar.make(view, "pulsado boton", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
         }
 
@@ -51,7 +58,30 @@ class ItemListActivity : AppCompatActivity() {
             twoPane = true
         }
 
-        setupRecyclerView(item_list)
+        wpPetition()
+    }
+    private fun wpPetition() {
+        // el siguiente codigo lo lanzamos en una corrutina, en otro hilo
+
+        doAsync {
+
+
+            val peticion = URL("http://52.14.208.12/wordpress/?rest_route=/wp/v2/posts").readText()
+            // sabemos que recibimos un array de objetos JSON
+            val miJSONArray = JSONArray(peticion)
+
+            for (jsonIndex in 0..(miJSONArray.length() - 1)) {
+                val idpost = miJSONArray.getJSONObject(jsonIndex).getString("id")
+                val titulo = miJSONArray.getJSONObject(jsonIndex).getJSONObject("title").getString("rendered")
+                val resumen = miJSONArray.getJSONObject(jsonIndex).getJSONObject("excerpt").getString("rendered")
+                DummyContent.addItem(DummyContent.DummyItem(idpost, titulo, resumen))
+
+            }
+            uiThread {
+                setupRecyclerView(item_list)
+            }
+
+        }
     }
 
     private fun setupRecyclerView(recyclerView: RecyclerView) {
@@ -112,5 +142,7 @@ class ItemListActivity : AppCompatActivity() {
             val idView: TextView = view.id_text
             val contentView: TextView = view.content
         }
+
+
     }
 }

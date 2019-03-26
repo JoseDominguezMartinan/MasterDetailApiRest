@@ -21,7 +21,8 @@ class ItemDetailActivity : AppCompatActivity() {
         setSupportActionBar(detail_toolbar)
 
         fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own detail action", Snackbar.LENGTH_LONG)
+            // mensaje que se mostrara al dar al fab
+            Snackbar.make(view, "este boton por ahora no realiza nada", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
         }
 
